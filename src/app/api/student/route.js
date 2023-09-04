@@ -3,6 +3,7 @@ import {
   zStudentGetParam,
   zStudentPostBody,
   zStudentPutBody,
+  zStudentDeleteBody,
 } from "@/app/libs/schema";
 import { NextResponse } from "next/server";
 
@@ -26,11 +27,14 @@ export const GET = async (request) => {
   }
 
   let filtered = DB.students;
+
+  //filter by student id here
+  if (studentId !== null) {
+    filtered = filtered.filter((std) => std.studentId === studentId);
+  }
   if (program !== null) {
     filtered = filtered.filter((std) => std.program === program);
   }
-
-  //filter by student id here
 
   return NextResponse.json({ ok: true, students: filtered });
 };
@@ -108,8 +112,33 @@ export const DELETE = async (request) => {
   //or 2. use splice array method
   // DB.students.splice(...)
 
+  const body = await request.json();
+
+  const parseResult = zStudentDeleteBody.safeParse(body);
+  if (parseResult.success === false) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Student Id must contain 9 characters",
+      },
+      { status: 400 }
+    );
+  }
+
+  const foundIndex = DB.students.findIndex(
+    (std) => std.studentId === body.studentId
+  );
+  if (foundIndex === -1) {
+    return NextResponse.json(
+      { ok: false, message: "Student Id does not exists" },
+      { status: 404 }
+    );
+  }
+
+  DB.students.splice(foundIndex, 1);
+
   return NextResponse.json({
     ok: true,
-    message: `Student Id xxx has been deleted`,
+    message: `Student Id ${body.studentId} has been deleted`,
   });
 };
